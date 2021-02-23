@@ -60,7 +60,7 @@ rule trimReads:
 		"--paired " +
 		"-q 20 --stringency 1 --length 20 " +
 		"--nextera " +
-		"-o ./trimmed_reads --gzip " +
+		"-o results/" + config["doProject"] + "/trimmed_reads --gzip " +
 		"--fastqc --fastqc_args \"-o qc/" + config["doProject"] + "/02_trimFastqc --threads 8\" " +
 		"--cores 8 " +
 		"{input.read1fl} {input.read2fl}"
