@@ -25,4 +25,4 @@ rule getReference:
 		#refFasta="data/reference/" + os.path.basename(config["inRefFastaURL"]),
 		refGtf="data/reference/" + os.path.basename(config["inRefGtfURL"])
 	shell:
-		"wget -P data/reference/" + config["inRefGtfURL"]
+		"wget -P data/reference/ " + config["inRefGtfURL"]
