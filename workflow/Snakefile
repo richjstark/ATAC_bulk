@@ -1,0 +1,28 @@
+import os
+#import numpy
+
+report: "report/workflow.rst"
+
+### Below rules will be run locally (head node), not through batch submission:
+localrules: all
+###
+
+### Config file location:
+configfile: "workflow/config.yaml"
+
+#IDS, RUNS = glob_wildcards("data/" + config["doProject"] + "/fastq/{sample}_R1_{run}.fastq.gz")
+### NB: Need to add logic here for checking whether a sample has more than one run.
+### If so, will need to add a step for combining runs.
+
+### Files at leaf nodes:
+rule all:
+	input:
+		"data/reference/" + os.path.basename(config["inRefGtfURL"])
+
+### Download the reference files:
+rule getReference:
+	output:
+		#refFasta="data/reference/" + os.path.basename(config["inRefFastaURL"]),
+		refGtf="data/reference/" + os.path.basename(config["inRefGtfURL"])
+	shell:
+		"wget -P data/reference/" + config["inRefGtfURL"]

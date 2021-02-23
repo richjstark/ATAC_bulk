@@ -1,0 +1,5 @@
+doProject: "test"
+### Input files:
+inRefFasta: "data/reference/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz"
+inRefGtf: "data/reference/Homo_sapiens.GRCh38.86.gtf.gz"
+inRefBowtie2Idx: "data/reference/Homo_sapiens.GRCh38.dna.primary_assembly"
