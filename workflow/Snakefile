@@ -20,8 +20,8 @@ rule all:
 	input:
 		"data/reference/" + os.path.basename(config["inRefGtfURL"]),
 		"data/reference/" + os.path.basename(config["inRefFastaURL"]),
-		expand("results/" + config["doProject"] + "/trimmed_reads/{sample}_R1_{run}_fq.gz", sample=IDS, run=RUNS),
-		expand("results/" + config["doProject"] + "/trimmed_reads/{sample}_R2_{run}_fq.gz", sample=IDS, run=RUNS)
+		expand("results/" + config["doProject"] + "/trimmed_reads/{sample}_R1_{run}_val_1.fq.gz", sample=IDS, run=RUNS),
+		expand("results/" + config["doProject"] + "/trimmed_reads/{sample}_R2_{run}_val_2.fq.gz", sample=IDS, run=RUNS)
 
 ### Download the reference files:
 rule getReference:
