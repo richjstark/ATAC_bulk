@@ -20,9 +20,8 @@ rule all:
 	input:
 		"data/reference/" + os.path.basename(config["inRefGtfURL"]),
 		"data/reference/" + os.path.basename(config["inRefFastaURL"]),
-		expand("qc/" + config["doProject"] + "/01_rawFastqc/{sample}_R1_{run}_fastqc.zip", sample=IDS, run=RUNS),
-		expand("qc/" + config["doProject"] + "/01_rawFastqc/{sample}_R2_{run}_fastqc.zip", sample=IDS, run=RUNS)
-
+		expand("results/" + config["doProject"] + "/trimmed_reads/{sample}_R1_{run}_fq.gz", sample=IDS, run=RUNS),
+		expand("results/" + config["doProject"] + "/trimmed_reads/{sample}_R2_{run}_fq.gz", sample=IDS, run=RUNS)
 
 ### Download the reference files:
 rule getReference:
@@ -48,7 +47,9 @@ rule rawQC:
 rule trimReads:
 	output:
 		trim1fl="results/" + config["doProject"] + "/trimmed_reads/{sample}_R1_{run}_val_1.fq.gz",
-		trim2fl="results/" + config["doProject"] + "/trimmed_reads/{sample}_R2_{run}_val_2.fq.gz"
+		trim2fl="results/" + config["doProject"] + "/trimmed_reads/{sample}_R2_{run}_val_2.fq.gz",
+		trim1qc="qc/" + config["doProject"] + "/02_trimFastqc/{sample}_R1_{run}_val_1_fastqc.zip",
+		trim2qc="qc/" + config["doProject"] + "/02_trimFastqc/{sample}_R2_{run}_val_2_fastqc.zip"
 	conda:
 		"envs/atac_dataprep.yaml"
 	input:
@@ -60,7 +61,7 @@ rule trimReads:
 		"-q 20 --stringency 1 --length 20 " +
 		"--nextera " +
 		"-o ./trimmed_reads --gzip " +
-		"--fastqc --fastqc_args \"-o qc/02_trimFastqc --threads 8\" " +
+		"--fastqc --fastqc_args \"-o qc/" + config["doProject"] + "/02_trimFastqc --threads 8\" " +
 		"--cores 8 " +
 		"{input.read1fl} {input.read2fl}"
 
