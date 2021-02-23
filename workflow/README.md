@@ -1,4 +1,6 @@
 # This is a bulk ATACseq analysis example
+```git clone https://github.com/richjstark/ATAC_bulk
+```
 
 ## Run locally, not using any batch system:
 ```snakemake --use-conda

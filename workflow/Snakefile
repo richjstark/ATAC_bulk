@@ -10,19 +10,66 @@ localrules: all
 ### Config file location:
 configfile: "workflow/config.yaml"
 
-#IDS, RUNS = glob_wildcards("data/" + config["doProject"] + "/fastq/{sample}_R1_{run}.fastq.gz")
+IDS, RUNS = glob_wildcards("data/" + config["doProject"] + "/{sample}_R1_{run}.fastq.gz")
 ### NB: Need to add logic here for checking whether a sample has more than one run.
+### or unpaired files.
 ### If so, will need to add a step for combining runs.
 
 ### Files at leaf nodes:
 rule all:
 	input:
-		"data/reference/" + os.path.basename(config["inRefGtfURL"])
+		"data/reference/" + os.path.basename(config["inRefGtfURL"]),
+		"data/reference/" + os.path.basename(config["inRefFastaURL"]),
+		expand("qc/" + config["doProject"] + "/01_rawFastqc/{sample}_R1_{run}_fastqc.zip", sample=IDS, run=RUNS),
+		expand("qc/" + config["doProject"] + "/01_rawFastqc/{sample}_R2_{run}_fastqc.zip", sample=IDS, run=RUNS)
+
 
 ### Download the reference files:
 rule getReference:
 	output:
-		#refFasta="data/reference/" + os.path.basename(config["inRefFastaURL"]),
+		refFasta="data/reference/" + os.path.basename(config["inRefFastaURL"]),
 		refGtf="data/reference/" + os.path.basename(config["inRefGtfURL"])
 	shell:
-		"wget -P data/reference/ " + config["inRefGtfURL"]
+		"wget -P data/reference/ " + config["inRefFastaURL"] + ";" +
+		"wget -P data/reference/ " + config["inRefGtfURL"] + ";"
+
+### QC for raw files:
+rule rawQC:
+	output:
+		fastqcReads="qc/" + config["doProject"] + "/01_rawFastqc/{sample}_R{read}_{run}_fastqc.zip"
+	conda:
+		"envs/atac_dataprep.yaml"
+	input:
+		rawReads="data/" + config["doProject"] + "/{sample}_R{read}_{run}.fastq.gz"
+	shell:
+		"fastqc {input.rawReads} -o qc/" + config["doProject"] + "/01_rawFastqc/"
+
+### Adapter trim and do fastqc:
+rule trimReads:
+	output:
+		trim1fl="results/" + config["doProject"] + "/trimmed_reads/{sample}_R1_{run}_val_1.fq.gz",
+		trim2fl="results/" + config["doProject"] + "/trimmed_reads/{sample}_R2_{run}_val_2.fq.gz"
+	conda:
+		"envs/atac_dataprep.yaml"
+	input:
+		read1fl="data/" + config["doProject"] + "/{sample}_R1_{run}.fastq.gz",
+		read2fl="data/" + config["doProject"] + "/{sample}_R2_{run}.fastq.gz"
+	shell:
+		"trim_galore " +
+		"--paired " +
+		"-q 20 --stringency 1 --length 20 " +
+		"--nextera " +
+		"-o ./trimmed_reads --gzip " +
+		"--fastqc --fastqc_args \"-o qc/02_trimFastqc --threads 8\" " +
+		"--cores 8 " +
+		"{input.read1fl} {input.read2fl}"
+
+
+
+
+
+
+
+#####
+#####
+#####
