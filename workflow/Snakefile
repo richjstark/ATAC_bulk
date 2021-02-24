@@ -82,7 +82,7 @@ rule buildIndex:
 ### Align trimmed reads to genome:
 rule alignATAC:
 	output:
-		sortedBam="results/" + config["doProject"] + "/alignment/{sample}.bam"
+		sortedBam="results/" + config["doProject"] + "/alignment/{sample}_{run}.bam"
 	conda:
 		"envs/atac_dataprep.yaml"
 	input:
@@ -95,14 +95,14 @@ rule alignATAC:
 		"-x data/reference/{refIdxNm} " +
 		"-1 {trim1fl} " +
 		"-2 {trim2fl} " +
-		"-S results/" + config["doProject"] + "/alignment/{sample}.sam " +
+		"-S results/" + config["doProject"] + "/alignment/{sample}_{run}.sam " +
 		"-p {threads} " +
-		"--local 2> results/" + config["doProject"] + "/alignment/{sample}.log;"
-		"samtools view -bS results/" + config["doProject"] + "/alignment/{sample}.sam > results/" + config["doProject"] + "/alignment/{sample}_presort.bam;"
-		"samtools sort results/" + config["doProject"] + "/alignment/{sample}_presort.bam -o results/" + config["doProject"] + "/alignment/{sample}.bam;"
-		"samtools index results/" + config["doProject"] + "/alignment/{sample}.bam;"
-		"rm results/" + config["doProject"] + "/alignment/{sample}.sam;"
-		"rm results/" + config["doProject"] + "/alignment/{sample}_presort.bam"
+		"--local 2> results/" + config["doProject"] + "/alignment/{sample}_{run}.log;"
+		"samtools view -bS results/" + config["doProject"] + "/alignment/{sample}_{run}.sam > results/" + config["doProject"] + "/alignment/{sample}_{run}_presort.bam;"
+		"samtools sort results/" + config["doProject"] + "/alignment/{sample}_{run}_presort.bam -o results/" + config["doProject"] + "/alignment/{sample}_{run}.bam;"
+		"samtools index results/" + config["doProject"] + "/alignment/{sample}_{run}.bam;"
+		"rm results/" + config["doProject"] + "/alignment/{sample}_{run}.sam;"
+		"rm results/" + config["doProject"] + "/alignment/{sample}_{run}_presort.bam"
 
 
 ### Gather alignment QC metrics:
