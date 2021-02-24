@@ -9,6 +9,7 @@ localrules: all
 
 ### Config file location:
 configfile: "workflow/config.yaml"
+refIdxNm=os.path.splitext( os.path.basename(config["inRefFastaURL"]) )[0]
 
 IDS, RUNS = glob_wildcards("data/" + config["doProject"] + "/{sample}_R1_{run}.fastq.gz")
 ### NB: Need to add logic here for checking whether a sample has more than one run.
@@ -21,7 +22,8 @@ rule all:
 		"data/reference/" + os.path.basename(config["inRefGtfURL"]),
 		"data/reference/" + os.path.basename(config["inRefFastaURL"]),
 		expand("results/" + config["doProject"] + "/trimmed_reads/{sample}_R1_{run}_val_1.fq.gz", sample=IDS, run=RUNS),
-		expand("results/" + config["doProject"] + "/trimmed_reads/{sample}_R2_{run}_val_2.fq.gz", sample=IDS, run=RUNS)
+		expand("results/" + config["doProject"] + "/trimmed_reads/{sample}_R2_{run}_val_2.fq.gz", sample=IDS, run=RUNS),
+		expand("results/" + config["doProject"] + "/alignment/{sample}.bam", sample=IDS)
 
 ### Download the reference files:
 rule getReference:
@@ -55,6 +57,7 @@ rule trimReads:
 	input:
 		read1fl="data/" + config["doProject"] + "/{sample}_R1_{run}.fastq.gz",
 		read2fl="data/" + config["doProject"] + "/{sample}_R2_{run}.fastq.gz"
+	threads: 8
 	shell:
 		"trim_galore " +
 		"--paired " +
@@ -62,10 +65,49 @@ rule trimReads:
 		"--nextera " +
 		"-o results/" + config["doProject"] + "/trimmed_reads --gzip " +
 		"--fastqc --fastqc_args \"-o qc/" + config["doProject"] + "/02_trimFastqc --threads 8\" " +
-		"--cores 8 " +
+		"--cores {threads} " +
 		"{input.read1fl} {input.read2fl}"
 
+### Build Bowtie2 index for reference genome:
+rule buildIndex:
+	output:
+		refIdxBt2_1="data/reference/{refIdxNm}.1.bt2"
+	conda:
+		"envs/atac_dataprep.yaml"
+	input:
+		refFasta=rules.getReference.output.refFasta
+	shell:
+		"bowtie2-build {refFasta} data/reference/{refIdxNm}"
 
+### Align trimmed reads to genome:
+rule alignATAC:
+	output:
+		sortedBam="results/" + config["doProject"] + "/alignment/{sample}.bam"
+	conda:
+		"envs/atac_dataprep.yaml"
+	input:
+		trim1fl=rules.trimReads.output.trim1fl,
+		trim2fl=rules.trimReads.output.trim2fl,
+		refIdxBt2_1=rules.buildIndex.output.refIdxBt2_1
+	threads: 16
+	shell:
+		"bowtie2 " +
+		"-x data/reference/{refIdxNm} " +
+		"-1 {trim1fl} " +
+		"-2 {trim2fl} " +
+		"-S results/" + config["doProject"] + "/alignment/{sample}.sam " +
+		"-p {threads} " +
+		"--local 2> results/" + config["doProject"] + "/alignment/{sample}.log;"
+		"samtools view -bS results/" + config["doProject"] + "/alignment/{sample}.sam > results/" + config["doProject"] + "/alignment/{sample}_presort.bam;"
+		"samtools sort results/" + config["doProject"] + "/alignment/{sample}_presort.bam -o results/" + config["doProject"] + "/alignment/{sample}.bam;"
+		"samtools index results/" + config["doProject"] + "/alignment/{sample}.bam;"
+		"rm results/" + config["doProject"] + "/alignment/{sample}.sam;"
+		"rm results/" + config["doProject"] + "/alignment/{sample}_presort.bam"
+
+
+### Gather alignment QC metrics:
+
+### ATACseqQC:
 
 
 
