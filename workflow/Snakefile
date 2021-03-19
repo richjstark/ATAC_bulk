@@ -23,7 +23,8 @@ rule all:
 		"data/reference/" + os.path.basename(config["inRefFastaURL"]),
 		expand("results/" + config["doProject"] + "/trimmed_reads/{sample}_R1_{run}_val_1.fq.gz", sample=IDS, run=RUNS),
 		expand("results/" + config["doProject"] + "/trimmed_reads/{sample}_R2_{run}_val_2.fq.gz", sample=IDS, run=RUNS),
-		expand("results/" + config["doProject"] + "/alignment/{sample}.bam", sample=IDS)
+		expand("results/" + config["doProject"] + "/alignment/{sample}_{run}.bam", sample=IDS, run=RUNS),
+		expand("results/" + config["doProject"] + "/peaks/{sample}_{run}.log", sample=IDS, run=RUNS)
 
 ### Download the reference files:
 rule getReference:
@@ -77,7 +78,7 @@ rule buildIndex:
 	input:
 		refFasta=rules.getReference.output.refFasta
 	shell:
-		"bowtie2-build {refFasta} data/reference/{refIdxNm}"
+		"bowtie2-build {input.refFasta} data/reference/{refIdxNm}"
 
 ### Align trimmed reads to genome:
 rule alignATAC:
@@ -93,23 +94,40 @@ rule alignATAC:
 	shell:
 		"bowtie2 " +
 		"-x data/reference/{refIdxNm} " +
-		"-1 {trim1fl} " +
-		"-2 {trim2fl} " +
-		"-S results/" + config["doProject"] + "/alignment/{sample}_{run}.sam " +
+		"-1 {input.trim1fl} " +
+		"-2 {input.trim2fl} " +
+		"-S results/" + config["doProject"] + "/alignment/{wildcards.sample}_{wildcards.run}.sam " +
 		"-p {threads} " +
-		"--local 2> results/" + config["doProject"] + "/alignment/{sample}_{run}.log;"
-		"samtools view -bS results/" + config["doProject"] + "/alignment/{sample}_{run}.sam > results/" + config["doProject"] + "/alignment/{sample}_{run}_presort.bam;"
-		"samtools sort results/" + config["doProject"] + "/alignment/{sample}_{run}_presort.bam -o results/" + config["doProject"] + "/alignment/{sample}_{run}.bam;"
-		"samtools index results/" + config["doProject"] + "/alignment/{sample}_{run}.bam;"
-		"rm results/" + config["doProject"] + "/alignment/{sample}_{run}.sam;"
-		"rm results/" + config["doProject"] + "/alignment/{sample}_{run}_presort.bam"
+		"--local 2> results/" + config["doProject"] + "/alignment/{wildcards.sample}_{wildcards.run}.log;"
+		"samtools view -bS results/" + config["doProject"] + "/alignment/{wildcards.sample}_{wildcards.run}.sam > results/" + config["doProject"] + "/alignment/{wildcards.sample}_{wildcards.run}_presort.bam;"
+		"samtools sort results/" + config["doProject"] + "/alignment/{wildcards.sample}_{wildcards.run}_presort.bam -o results/" + config["doProject"] + "/alignment/{wildcards.sample}_{wildcards.run}.bam;"
+		"samtools index results/" + config["doProject"] + "/alignment/{wildcards.sample}_{wildcards.run}.bam;"
+		"rm results/" + config["doProject"] + "/alignment/{wildcards.sample}_{wildcards.run}.sam;"
+		"rm results/" + config["doProject"] + "/alignment/{wildcards.sample}_{wildcards.run}_presort.bam"
 
+### Merge bam files from each run:
+# TO BE ADDED (not needed if all samples are run 001).
+
+### Remove mitochondrial regions:
 
 ### Gather alignment QC metrics:
 
 ### ATACseqQC:
 
-
+### MACS2 Peak calling:
+rule peaksMACS2:
+	output:
+		outLog="results/" + config["doProject"] + "/peaks/{sample}_{run}.log"
+	conda:
+		"envs/atac_peaks.yaml"
+	input:
+		inBam=rules.alignATAC.output.trim1fl.sortedBam
+	threads: 16
+	shell:
+		"macs2 callpeak -t {input.inBam} " +
+ 			"-f BAMPE " +
+			"-n {wildcards.sample}_{wildcards.run} " +
+			"--outdir macs2 2> {output.outLog}"
 
 
 

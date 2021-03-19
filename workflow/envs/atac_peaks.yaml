@@ -1,0 +1,7 @@
+channels:
+ - conda-forge
+ - bioconda
+dependencies:
+ - macs2
+ - genrich
+ - samtools

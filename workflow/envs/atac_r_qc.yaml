@@ -1,0 +1,10 @@
+channels:
+ - conda-forge
+ - bioconda
+dependencies:
+ - bioconductor-atacseqqc
+ - bioconductor-bsgenome.hsapiens.ncbi.grch38
+ - bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
+ - bioconductor-phastcons100way.ucsc.hg38
+ - bioconductor-motifdb
+ - r-jpeg
